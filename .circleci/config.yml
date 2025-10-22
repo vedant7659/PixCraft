@@ -22,14 +22,6 @@ jobs:
       - run:
           name: Build Project
           command: npm run build
-      # We don't need to persist to workspace because
-      # the next job will re-checkout the code to build
-      # the Docker image from scratch.
-
-  #
-  # We have REMOVED the "build-and-push-image" job from this section.
-  # We will call the orb's pre-built job directly in the workflow.
-  #
 
   # This job deploys your application to the EKS cluster
   deploy-to-kubernetes:
@@ -76,7 +68,7 @@ workflows:
             - build-and-test
           context:
             # "aws-creds" is the name of the Context
-            # we will create in CircleCI
+            # we created in CircleCI
             - aws-creds
           filters:
             branches:
