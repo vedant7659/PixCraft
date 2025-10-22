@@ -22,12 +22,38 @@ jobs:
       - run:
           name: Build Project
           command: npm run build
+      # Persist the entire working directory (including Dockerfile, nginx.conf, etc.)
+      # to the workspace for the next job.
+      - persist_to_workspace:
+          root: .
+          paths:
+            - .
+
+  # This job builds the Docker image and pushes it to your ECR
+  build-and-push-image:
+    # Use the special executor from the aws-ecr orb
+    executor: aws-ecr/default
+    steps:
+      # Get all the code from the previous job
+      - attach_workspace:
+          at: .
+      # Set up the AWS region
+      - aws-cli/setup:
+          region: ${AWS_REGION}
+      # Call the COMMAND from the orb to build and push the image
+      - aws-ecr/build-and-push-image:
+          repo: pixcraft-repo
+          region: ${AWS_REGION}
+          tag: "latest"
+          # Note: No 'registry-id' is needed here. The 'aws-ecr/default'
+          # executor and 'aws-creds' context handle authentication.
 
   # This job deploys your application to the EKS cluster
   deploy-to-kubernetes:
     docker:
       - image: cimg/base:stable
     steps:
+      # This job needs a fresh checkout to get the k8s/ folder
       - checkout
       - aws-cli/setup:
           region: ${AWS_REGION}
@@ -55,15 +81,8 @@ workflows:
       # 1. Run the build/test job first
       - build-and-test
 
-      # 2. After build-and-test, run the image push
-      #    This is the FIX: We call the orb's job directly
-      - aws-ecr/build-and-push-image:
-          # These are the parameters for the orb job
-          repo: pixcraft-repo
-          region: ${AWS_REGION}
-          tag: "latest"
-          registry-id: AWS_ECR_REGISTRY_ID
-          # These are the workflow requirements
+      # 2. After build-and-test, run OUR build-and-push-image job
+      - build-and-push-image:
           requires:
             - build-and-test
           context:
@@ -75,11 +94,11 @@ workflows:
               only:
                 - main  # Only run this on the main branch
 
-      # 3. After the image is pushed, deploy to Kubernetes
+      # 3. After our image is pushed, deploy to Kubernetes
       - deploy-to-kubernetes:
           requires:
-            # This dependency name MUST match the job name above
-            - aws-ecr/build-and-push-image
+            # This dependency name MUST match our job name above
+            - build-and-push-image
           context:
             - aws-creds
           filters:
