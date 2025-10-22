@@ -35,8 +35,10 @@ jobs:
     docker:
       - image: cimg/aws:2024.06
     # This step is CRITICAL for running docker commands
-    setup_remote_docker: true
     steps:
+      # FIX: 'setup_remote_docker' is a step, not a job key.
+      # It must be moved inside the 'steps:' array.
+      - setup_remote_docker: true
       # Get all the code from the previous job
       - attach_workspace:
           at: .
