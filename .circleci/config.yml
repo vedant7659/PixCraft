@@ -73,13 +73,11 @@ jobs:
             docker push $ECR_REPO_URL:$IMAGE_TAG
             docker push $ECR_REPO_URL:latest
       - run:
-          name: Save Image Tag
+          name: Save Image Tag to Environment
           command: |
-            echo "${CIRCLE_SHA1:0:7}" > /tmp/image-tag.txt
-      - persist_to_workspace:
-          root: /tmp
-          paths:
-            - image-tag.txt
+            echo "export IMAGE_TAG=${CIRCLE_SHA1:0:7}" >> $BASH_ENV
+            source $BASH_ENV
+            echo "Image tag: $IMAGE_TAG"
 
   # Deploy to EKS cluster
   deploy-to-kubernetes:
@@ -88,8 +86,6 @@ jobs:
     resource_class: medium
     steps:
       - checkout
-      - attach_workspace:
-          at: /tmp
       - aws-cli/install
       - aws-cli/setup:
           region: ${AWS_REGION}
@@ -104,8 +100,10 @@ jobs:
       - run:
           name: Update Deployment with New Image
           command: |
-            export IMAGE_TAG=$(cat /tmp/image-tag.txt)
+            export IMAGE_TAG="${CIRCLE_SHA1:0:7}"
             export ECR_REPO_URL="${AWS_ECR_REGISTRY_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/pixcraft-repo"
+            
+            echo "Deploying image: $ECR_REPO_URL:$IMAGE_TAG"
             
             # Update the deployment image
             kubectl set image deployment/pixcraft-deployment \
