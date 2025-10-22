@@ -4,7 +4,6 @@ version: 2.1
 
 # 1. Orbs (reusable packages) for AWS and Kubernetes
 orbs:
-  # We have REMOVED the aws-ecr orb as it was causing errors.
   aws-cli: circleci/aws-cli@4.1.2
   kubernetes: circleci/kubernetes@1.3.1
 
@@ -31,14 +30,12 @@ jobs:
 
   # This job builds the Docker image and pushes it to your ECR
   build-and-push-image:
-    # Use a standard AWS image that has all tools
     docker:
       - image: cimg/aws:2024.06
-    # This step is CRITICAL for running docker commands
     steps:
-      # FIX: 'setup_remote_docker' is a step, not a job key.
-      # It must be moved inside the 'steps:' array.
-      - setup_remote_docker: true
+      # FIX: setup_remote_docker must be an object, not a boolean
+      - setup_remote_docker:
+          version: default
       # Get all the code from the previous job
       - attach_workspace:
           at: .
@@ -123,4 +120,3 @@ workflows:
             branches:
               only:
                 - main  # Only run this on the main branch
-
