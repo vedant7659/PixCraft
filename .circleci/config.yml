@@ -1,0 +1,38 @@
+version: 2.1
+
+executors:
+  node-executor:
+    docker:
+      - image: cimg/node:18.17
+
+jobs:
+  build:
+    executor: node-executor
+    working_directory: ~/project
+    steps:
+      - checkout
+      - run:
+          name: Check for package.json
+          command: ls -la ~/project/package.json
+      - run:
+          name: Debug Files After Checkout
+          command: ls -la ~/project
+      - run:
+          name: Install Dependencies
+          command: npm install
+      - run:
+          name: Verify Vite Installation
+          command: npx vite --version
+      - run:
+          name: Build Project
+          command: npm run build
+      - persist_to_workspace:
+          root: ~/project
+          paths:
+            - dist  # Ensure that 'dist' is correctly referenced
+#commited and updated
+workflows:
+  version: 2
+  build:
+    jobs:
+      - build
