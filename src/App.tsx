@@ -16,7 +16,7 @@ function App() {
           <div className="flex justify-between items-center">
             <h1 className="text-3xl font-bold neon-text flex items-center gap-2">
               <ImagePlus className="w-8 h-8" />
-              PicX 2.0
+              PixCraft
             </h1>
           </div>
         </div>
