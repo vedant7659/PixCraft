@@ -1,24 +1,28 @@
-# Use Node.js LTS (Alpine for smaller image size)
-FROM node:20-alpine
+# STAGE 1: Build the React/Vite app
+FROM node:20-alpine AS builder
 
-# Set working directory
 WORKDIR /app
 
-# Copy package files
+# Copy package files and install dependencies
 COPY package*.json ./
-
-# Install dependencies
 RUN npm install
 
-# Copy project files
+# Copy the rest of the source code and build
 COPY . .
-
-# Build the app
 RUN npm run build
 
-# Expose port 5173 (Vite's default port)
+# STAGE 2: Serve the static files with Nginx
+FROM nginx:alpine
 
-EXPOSE 5173
+# Copy the built assets from the 'builder' stage
+COPY --from=builder /app/dist /usr/share/nginx/html
 
-# Start the app
-CMD ["npm", "run", "dev", "--", "--host"]
+# Copy the custom Nginx configuration
+# (You will need to create this file in your project)
+COPY nginx.conf /etc/nginx/conf.d/default.conf
+
+# Expose port 80 (Nginx's default port)
+EXPOSE 80
+
+# Run Nginx
+CMD ["nginx", "-g", "daemon off;"]

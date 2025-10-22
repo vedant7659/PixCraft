@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: Service
+metadata:
+  # This is the name of your service
+  name: pixcraft-service
+spec:
+  # This type automatically creates an AWS Elastic Load Balancer (ELB)
+  # to expose your service to the internet.
+  type: LoadBalancer
+  selector:
+    # This selects the pods created by your Deployment (based on the label)
+    app: pixcraft
+  ports:
+    - protocol: TCP
+      # This is the port the Load Balancer will listen on (publicly)
+      port: 80
+      # This is the port on the container that traffic will be sent to (Nginx's port)
+      targetPort: 80

@@ -1,0 +1,30 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  # This is the name of your deployment
+  name: pixcraft-deployment
+spec:
+  # Run 2 copies of your app for high availability
+  replicas: 2
+  selector:
+    # This label connects the Deployment to the Service
+    matchLabels:
+      app: pixcraft
+  template:
+    metadata:
+      labels:
+        # This label is used by the selector
+        app: pixcraft
+    spec:
+      containers:
+      - name: pixcraft
+        #
+        # IMPORTANT: You MUST replace this placeholder
+        # with your AWS ECR Repository URL from Phase 1.
+        #
+        image: 366756600807.dkr.ecr.ap-south-1.amazonaws.com/pixcraft-repo:latest
+        imagePullPolicy: Always # Always pull the latest image
+        ports:
+          # This is the port Nginx is running on inside the container
+          - containerPort: 80
+
