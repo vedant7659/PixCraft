@@ -98,20 +98,17 @@ jobs:
               --name ${EKS_CLUSTER_NAME} \
               --region ${AWS_REGION}
       - run:
-          name: Update Deployment with New Image
+          name: Deploy to Kubernetes
           command: |
             export IMAGE_TAG="${CIRCLE_SHA1:0:7}"
             export ECR_REPO_URL="${AWS_ECR_REGISTRY_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/pixcraft-repo"
             
             echo "Deploying image: $ECR_REPO_URL:$IMAGE_TAG"
             
-            # Update the deployment image
-            kubectl set image deployment/pixcraft-deployment \
-              pixcraft=$ECR_REPO_URL:$IMAGE_TAG \
-              --record
-      - run:
-          name: Apply Kubernetes Manifests
-          command: |
+            # Update the image in deployment.yaml and apply
+            sed -i "s|image:.*|image: $ECR_REPO_URL:$IMAGE_TAG|g" k8s/deployment.yaml
+            
+            # Apply manifests (will create or update)
             kubectl apply -f k8s/deployment.yaml
             kubectl apply -f k8s/service.yaml
       - run:
