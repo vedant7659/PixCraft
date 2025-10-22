@@ -26,23 +26,10 @@ jobs:
       # the next job will re-checkout the code to build
       # the Docker image from scratch.
 
-  # This job builds the Docker image and pushes it to your ECR
-  build-and-push-image:
-    # This job runs in a machine executor to build Docker images
-    machine:
-      image: ubuntu-2004:2022.01.2
-    steps:
-      - checkout
-      - aws-cli/setup:
-          region: ${AWS_REGION}
-      - aws-ecr/build-and-push-image:
-          # This is the ECR repository name you created
-          repo: pixcraft-repo
-          region: ${AWS_REGION}
-          # This sets the image tag to "latest"
-          tag: "latest"
-          # This must match the ECR_REGISTRY_URL variable
-          registry-id: AWS_ECR_REGISTRY_ID
+  #
+  # We have REMOVED the "build-and-push-image" job from this section.
+  # We will call the orb's pre-built job directly in the workflow.
+  #
 
   # This job deploys your application to the EKS cluster
   deploy-to-kubernetes:
@@ -77,7 +64,14 @@ workflows:
       - build-and-test
 
       # 2. After build-and-test, run the image push
-      - build-and-push-image:
+      #    This is the FIX: We call the orb's job directly
+      - aws-ecr/build-and-push-image:
+          # These are the parameters for the orb job
+          repo: pixcraft-repo
+          region: ${AWS_REGION}
+          tag: "latest"
+          registry-id: AWS_ECR_REGISTRY_ID
+          # These are the workflow requirements
           requires:
             - build-and-test
           context:
@@ -92,10 +86,12 @@ workflows:
       # 3. After the image is pushed, deploy to Kubernetes
       - deploy-to-kubernetes:
           requires:
-            - build-and-push-image
+            # This dependency name MUST match the job name above
+            - aws-ecr/build-and-push-image
           context:
             - aws-creds
           filters:
             branches:
               only:
                 - main  # Only run this on the main branch
+
